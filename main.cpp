@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
+#include <cassert>
+#include <sstream>
 
 using namespace std;
 
@@ -24,22 +26,32 @@ int seq_search(vector<int> &keys, int key, int &numCmp) {
     return seq_search(keys,key,start,keys.size(),numCmp);
 }
 
+int bSearchStep(vector<int> &keys, int key, int &numCmp,int &low,int &high){
+    numCmp++;
+    int middle = low + (high - low) / 2;
+    int cmpVal = keys[middle];
+
+    if (cmpVal == key) {
+        return middle;
+    } else {
+        numCmp++;
+        if (cmpVal > key) {
+            high = middle - 1;
+        } else {
+            low = middle + 1;
+        }
+    }
+    return -1;
+}
+
 // Binary search
 int bin_search(vector<int> &keys, int key, int &numCmp) {
     int low = 0;
     int high = keys.size() - 1;
-
     while (low <= high) {
-        numCmp++;
-        int middle = low + (high - low) / 2;
-        int cmpVal = keys[middle];
-
-        if (cmpVal == key) {
-            return middle;
-        } else if (cmpVal > key) {
-            high = middle - 1;
-        } else {
-            low = middle + 1;
+        int possSol=bSearchStep(keys,key,numCmp,low,high);
+        if (possSol != -1){
+            return possSol;
         }
     }
     return -1;
@@ -50,23 +62,37 @@ int bin2_search(vector<int> &keys, int key, int &numCmp) {
     int low = 0;
     int high = keys.size() - 1;
 
-    while (low-high > 15) {
-        numCmp++;
-        int middle = low + (high - low) / 2;
-        int cmpVal = keys[middle];
-
-        if (cmpVal == key) {
-            return middle;
-        } else if (cmpVal > key) {
-            high = middle - 1;
-        } else {
-            low = middle + 1;
+    while (high - low > 15) {
+        int possSol=bSearchStep(keys,key,numCmp,low,high);
+        if (possSol != -1){
+            return possSol;
         }
     }
     return seq_search(keys,key,low,high,numCmp);
 }
 
+void printEqual(stringstream &ss, int size){
+    for (int i = 0;i < size;i++ ){
+        char d;
+        if ( ss >> d){
+            cout << d;
+        } else {
+            cout << ' ';
+        }
+    }
+}
 
+void printEqual(string in,int size){
+    stringstream ss;
+    ss << in;
+    printEqual(ss,size);
+}
+
+void printEqual(int in,int size){
+    stringstream ss;
+    ss << in;
+    printEqual(ss,size);
+}
 // Test the search algorithms
 int main() {
     // Test implementations
@@ -80,12 +106,13 @@ int main() {
 
 
     // Initialize random seed
-    srand(time(NULL));
+    srand(time(0));
 
     // Create a vector of 100,000 integers
-    vector<int> arr(100000);
+    vector<int> arr;
+    arr.reserve(100000);
     for (int i = 0; i < 100000; ++i) {
-        arr[i] = rand(); // Generate random integers
+        arr.push_back(rand()); // Generate random integers
     }
 
     // Sort the vector using STL sort
@@ -102,7 +129,29 @@ int main() {
     for (int i = 0; i < 50; i++) {
         random.push_back(rand());
     }
-    // Test each search algorithm, output results
 
+    vector<vector<int>> toFind={guaranteed,random};
+    // Test each search algorithm, output results
+    cout << " Search         Found      Seq. Search   Bin Search  Enhanced Search" << endl;
+    for (vector<int> vec: toFind){
+        for (int i=0; i < 50; i++){
+            int searchElement=vec[i];
+            int sCount=0;
+            int sresult=seq_search(arr,searchElement,sCount);
+            int bCount=0;
+            int bresult=bin_search(arr,searchElement,bCount);
+            int eCount=0;
+            int eresult=bin2_search(arr,searchElement,eCount);
+            if (!(arr[sresult] == arr[bresult]) && (arr[bresult] == arr[eresult])){
+                cout << "ERROR got S: " << arr[sresult] << "  B: " << arr[bresult] << "  E:" << arr[eresult] << endl;
+            }
+            vector<int> vals={searchElement,sresult,sCount,bCount,eCount};
+            cout << "  ";
+            for (int val:vals){
+                printEqual(val,14);
+            }
+            cout << endl;
+        }
+    }
     return 0;
 }
